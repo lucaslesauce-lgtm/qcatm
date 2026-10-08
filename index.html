@@ -83,7 +83,9 @@ input:focus-visible,button:focus-visible,.opt:has(input:focus-visible){outline:3
 .fname{display:inline-block;font-variant-numeric:tabular-nums;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 10px;margin:8px 0 18px;overflow-wrap:anywhere}
 .msg{font-size:14px;color:var(--muted);margin-top:14px}
 .msg.err{color:var(--warn)}
-footer.bar{flex:none;display:flex;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
+footer.bar{display:none}
+.navbar{display:flex;gap:10px;margin-top:24px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+footer.bar-old{flex:none;display:flex;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
 .btn{min-height:52px;border-radius:10px;padding:0 20px;font-weight:700;font-size:17px;cursor:pointer;border:2px solid var(--accent);display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .btn.primary{flex:1;background:var(--accent);color:var(--accent-ink)}
 .btn.ghost{background:transparent;color:var(--accent)}
@@ -94,7 +96,6 @@ footer.bar{flex:none;display:flex;gap:10px;padding:10px 16px calc(10px + env(saf
 <div id="app">
   <header class="top" id="hdr"></header>
   <main id="main" tabindex="-1" aria-live="polite"></main>
-  <footer class="bar" id="ftr"></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -138,7 +139,7 @@ function optHtml(type,name,idx,item,checked){
    +(item.n&&/^\d+$/.test(item.n)?'<span class="num">'+item.n+'</span>':'')+'<span class="txt">'+esc(item.l)+(item.note?'<small>'+esc(item.note)+'</small>':'')+'</span></label>';
 }
 function screen(){
-  const m=$('main'), f=$('ftr'); let html='', fb='';
+  const m=$('main'); let html='', fb='';
   const prev='<button class="btn ghost" data-act="prev" aria-label="Étape précédente">Précédent</button>';
   if(S.step<0){
     html='<p class="lead intro">À joindre au rapport de blessure, maladie ou décès (imprimé RPM/102). Les réponses restent sur votre appareil, le PDF est créé ici.</p>'
@@ -187,7 +188,7 @@ function screen(){
     fb=prev+(last?'<button class="btn primary" data-act="validate"'+(S.busy?' disabled':'')+'>'+(S.busy?'Création du PDF…':'Valider')+'</button>'
         :'<button class="btn primary" data-act="next">'+(S.step===steps.length-2?'Voir le récapitulatif':'Suivant')+'</button>');
   }
-  m.innerHTML=html; f.innerHTML=fb; f.hidden=!fb; 
+  m.innerHTML=html+(fb?'<div class="navbar" id="ftr">'+fb+'</div>':'');
 }
 function fit(){const h=$('q1');if(!h)return;let s=24;h.style.fontSize=s+'px';while(s>11&&h.scrollWidth>h.clientWidth){s-=.5;h.style.fontSize=s+'px'}}
 function render(keepScroll){header();screen();fit();if(!keepScroll){$('main').scrollTop=0}}
@@ -252,7 +253,7 @@ function fileName(){const d=sec();const id=S.numero||S.date||today();return 'QCA
 async function validate(){
   if(S.busy)return;S.busy=true;S.err='';render(true);
   try{ if(!window.PDFLib)throw new Error('lib'); const bytes=await makePdf(); S.done={bytes,name:fileName()}; }
-  catch(e){S.err='Le PDF n’a pas pu être créé. Vérifiez votre connexion puis réessayez.'; S.done=null; S.busy=false; render(true); const m=$('main'); m.insertAdjacentHTML('beforeend','<p class="msg err">'+esc(S.err)+'</p>'); return}
+  catch(e){S.err='Le PDF n’a pas pu être créé. Vérifiez votre connexion puis réessayez.'; S.done=null; S.busy=false; render(true); const m=$('main'); (function(){const nb=$('ftr'),p='<p class="msg err">'+esc(S.err)+'</p>';nb?nb.insertAdjacentHTML('beforebegin',p):m.insertAdjacentHTML('beforeend',p)})(); return}
   S.busy=false;render();
 }
 async function download(){
